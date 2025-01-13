@@ -1,0 +1,217 @@
+real[int] colormapHSVjet = [
+     0.6667,    1.0000,    0.5625,
+     0.6667,    1.0000,    0.6250,
+     0.6667,    1.0000,    0.6875,
+     0.6667,    1.0000,    0.7500,
+     0.6667,    1.0000,    0.8125,
+     0.6667,    1.0000,    0.8750,
+     0.6667,    1.0000,    0.9375,
+     0.6667,    1.0000,    1.0000,
+     0.6563,    1.0000,    1.0000,
+     0.6458,    1.0000,    1.0000,
+     0.6354,    1.0000,    1.0000,
+     0.6250,    1.0000,    1.0000,
+     0.6146,    1.0000,    1.0000,
+     0.6042,    1.0000,    1.0000,
+     0.5938,    1.0000,    1.0000,
+     0.5833,    1.0000,    1.0000,
+     0.5729,    1.0000,    1.0000,
+     0.5625,    1.0000,    1.0000,
+     0.5521,    1.0000,    1.0000,
+     0.5417,    1.0000,    1.0000,
+     0.5313,    1.0000,    1.0000,
+     0.5208,    1.0000,    1.0000,
+     0.5104,    1.0000,    1.0000,
+     0.5000,    1.0000,    1.0000,
+     0.4889,    0.9375,    1.0000,
+     0.4762,    0.8750,    1.0000,
+     0.4615,    0.8125,    1.0000,
+     0.4444,    0.7500,    1.0000,
+     0.4242,    0.6875,    1.0000,
+     0.4000,    0.6250,    1.0000,
+     0.3704,    0.5625,    1.0000,
+     0.3333,    0.5000,    1.0000,
+     0.2963,    0.5625,    1.0000,
+     0.2667,    0.6250,    1.0000,
+     0.2424,    0.6875,    1.0000,
+     0.2222,    0.7500,    1.0000,
+     0.2051,    0.8125,    1.0000,
+     0.1905,    0.8750,    1.0000,
+     0.1778,    0.9375,    1.0000,
+     0.1667,    1.0000,    1.0000,
+     0.1563,    1.0000,    1.0000,
+     0.1458,    1.0000,    1.0000,
+     0.1354,    1.0000,    1.0000,
+     0.1250,    1.0000,    1.0000,
+     0.1146,    1.0000,    1.0000,
+     0.1042,    1.0000,    1.0000,
+     0.0938,    1.0000,    1.0000,
+     0.0833,    1.0000,    1.0000,
+     0.0729,    1.0000,    1.0000,
+     0.0625,    1.0000,    1.0000,
+     0.0521,    1.0000,    1.0000,
+     0.0417,    1.0000,    1.0000,
+     0.0313,    1.0000,    1.0000,
+     0.0208,    1.0000,    1.0000,
+     0.0104,    1.0000,    1.0000,
+          0,    1.0000,    1.0000,
+          0,    1.0000,    0.9375,
+          0,    1.0000,    0.8750,
+          0,    1.0000,    0.8125,
+          0,    1.0000,    0.7500,
+          0,    1.0000,    0.6875,
+          0,    1.0000,    0.6250,
+          0,    1.0000,    0.5625,
+          0,    1.0000,    0.5000];
+real T = 0.15; // Espesor
+real M = 0.02; // Curvatura
+real P = 0.3;  // Posición de la curvatura
+real Fy, Fx, Gamma, CL, CD;
+func r = sqrt(x^2 + y^2);
+real alpha1=0;
+real x0=-10, x1=10, y0=-10, y1=10;
+real cont=0;
+real tfinal=500;
+real Dt=0.05;
+real [int,int] A(1,4);
+
+
+func real yt(real t,real T) {
+return T/0.2*(0.2969*sqrt(t)-0.126*t-0.3516*(t^2)+0.2843*(t^3)-0.1036*(t^4));
+}
+
+func real yc(real t,real M,real P) {
+if(t >= 0 && t < P) {
+return M/(P^2) * (2*P*t-(t^2));
+} else {
+return M/((1-P)^2)*(1-2*P+2*P*t-(t^2));
+}
+}
+
+func real yteta(real t,real M,real P) {
+if(t >= 0 && t < P) {
+return atan(2*M/(P^2)*(P-t));
+} else {
+return atan(2*M/((1-P)^2)*(P-t));
+}
+}
+
+for(real i=-10;i<=30;i=i+10){
+
+	real alpha=i;
+	
+// Definir las fronteras
+border Sext1(t = 0, 1) { x = x0 + t*(x1-x0); y = y0;label = 1;}; // walls
+border Sext2(t = 0, 1) { x = x1; y = y0 + t*(y1-y0);label= 2;}; //outlet
+border Sext3(t = 0, 1) { x = x1 + t*(x0-x1); y = y1;label = 3;};
+border Sext4(t = 0, 1) { x = x0; y = y1 + t*(y0-y1);label = 4;};   //parte derecha
+border Splus(t = 0, 1) { x = t - yt(t,T)*sin(yteta(t,M,P)); y = yc(t,M,P) + yt(t,T)*cos(yteta(t,M,P)); label = 5;};
+border Sminus(t = 1, 0) { x = t + yt(t,T)*sin(yteta(t,M,P)); y = yc(t,M,P) - yt(t,T)*cos(yteta(t,M,P)); label = 5;};
+
+mesh Th = buildmesh(Sext1(x1*2/0.5)+Sext2(x1*2/0.5)+Sext3(x1*2/0.5)+Sext4(x1*2/0.5)+ Splus(1.03456/0.005) + Sminus(0.996111/0.005));
+//plot(Th);
+
+
+fespace Vh2(Th,P2);
+fespace Vh1(Th,P1);
+Vh2 ux,uy,wx,wy,uxold1,uyold1,uxold2,uyold2;
+Vh2 psi,w;
+Vh1 q,p;
+
+
+//Esquema Runge-Kuta de orden 2.
+func Xcaract=x-0.5*Dt*(ux+uxold1(x-Dt*ux,y-Dt*uy));
+func Ycaract=y-0.5*Dt*(uy+uyold1(x-Dt*ux,y-Dt*uy));
+func Xcaract2=x-Dt*(ux+uxold2(x-2.0*Dt*ux,y-2.0*Dt*uy));
+func Ycaract2=y-Dt*(uy+uyold2(x-2.0*Dt*ux,y-2.0*Dt*uy));
+
+
+
+
+	
+	real rest=0;
+	for(real j=100;j<=1000;j=j+200){
+		real cln=0,clnm1=0;
+		real counterror=0;
+		real n=1;
+		ofstream ff("NACA_temporal_Re_"+j+"_Ang_"+i+"_Temporal.txt");
+		real error=1;
+		real alpha = pi / 180 * i;
+		real Re=j;
+		//Esquema BDF2
+		 problem navierstokes([ux,uy,p],[wx,wy,q]) = int2d(Th)(1.5*ux*wx/Dt + 1.5*uy*wy/Dt)
+											 - int2d(Th)(2.0*uxold1(Xcaract,Ycaract)*wx/Dt + 2.0*uyold1(Xcaract,Ycaract)*wy/Dt) ///2o orden
+											 + int2d(Th)(0.5*uxold2(Xcaract2,Ycaract2)*wx/Dt + 0.5*uyold2(Xcaract2,Ycaract2)*wy/Dt) ///2o orden
+											 - int2d(Th)(p*(dx(wx)+dy(wy)))
+											 - int2d(Th)(q*(dx(ux)+dy(uy))) 
+											 + int2d(Th)(1.0/Re*(dx(ux)*dx(wx)+dy(ux)*dy(wx) + dx(uy)*dx(wy)+ dy(uy)*dy(wy)))
+											 + on(5,ux=0,uy=0) + on(1,3,4,2,ux=cos(alpha),uy=sin(alpha));//+on(2, p=0);
+			
+		problem streamline(psi,w) =int2d(Th)(dx(psi)*dx(w)+dy(psi)*dy(w)) - int2d(Th)((-dx(uy) + dy(ux))*w)- int1d(Th,1,2,3,4)((-uy*N.x+ux*N.y)*w) + on(5,psi=0); 
+
+		problem extrapvelociades([ux,uy],[wx,wy]) = int2d(Th)((ux*wx + uy*wy))- int2d(Th)((2*uxold1-uxold2)*wx + (2*uyold1-uyold2)*wy);
+
+
+		//real[int] viso=[0,0.01,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.1];
+		ux=0;
+		uy=0;
+		uxold1=ux;
+		uyold1=uy;
+		//plot(Tn,dim=2,viso=viso,fill=1,value=1,wait=1,cmm="tiempo= " + 0*Dt + " seg");
+		while ( (error > 1e-3 || n*Dt<10)&& counterror<10) {
+			uxold2=uxold1; uyold2=uyold1;
+			uxold1=ux; uyold1=uy;
+			extrapvelociades;
+			navierstokes;	
+			streamline;
+			
+			
+			   //plot(ux,dim=2,viso=viso,fill=1,value=1,wait=0,cmm="tiempo= " + n*Dt + " seg,    Re="+Re, hsv=colormapHSVjet);
+
+			   plot([ux,uy],dim=2,fill=0,value=1,wait=0,cmm="tiempo= " + n*Dt + " seg,    Re="+Re+",	Angulo="+i, hsv=colormapHSVjet);
+			   //plot(p,dim=2,fill=0,value=1,wait=0,cmm="tiempo= " + n*Dt + " seg,	Re="+Re+",	Angulo:"+i, hsv=colormapHSVjet);
+				if((n%5==0 || n==1)&& n<25){
+					for(int k=0;k<3;k++){
+						Th = adaptmesh(Th, ux, uy, p, hmin=0.005, hmax=2.5, nbvx=7500, err=1e-2);
+					}
+				}
+				Fx = int1d(Th,5)((-p + 2*dx(ux)) * (-N.x) + (dy(ux) + dx(uy)) * (-N.y));
+				Fy = int1d(Th,5)((dy(ux) + dx(uy)) * (-N.x) + (-p + 2*dy(uy)) * (-N.y));
+
+				CL = 2*(-Fx * sin(alpha) + Fy * cos(alpha));
+				cout << "Coeficiente de sustentacion = " << CL << "\t" << endl;
+				
+				CD = 2*(Fx * cos(alpha) + Fy * sin(alpha));
+				cout << "Coeficiente de arrastre = " << CD << "\t" << endl;
+
+				cout << "Fuerza x: " << Fx << "\t" << "Fuerza y: " << Fy << endl;
+
+				cout << "Fuerza arrastre: " << Fx * cos(alpha) + Fy * sin(alpha) << "\t" 
+					 << "Fuerza Sustentacion: " << -Fx * sin(alpha) + Fy * cos(alpha) << endl;
+				cout << "Angulo:"<< i <<"\tReynolds:"<< j << endl;
+				cln=CL;
+				error=abs(cln-clnm1);
+				if(error<0.01){
+					counterror=counterror+1;
+					cout << "%----------Counterror:"<< counterror << endl;
+				}
+				
+				clnm1=cln;
+				n=n+1;
+				cout << "%-----------Error:"<< error  << endl;
+
+		}
+		 A(0, 0) = alpha*180/pi;
+	     A(0, 1) = Re;
+		 A(0, 2) = CL;
+		 A(0, 3) = CD;
+         ff << A(0, 0) << "\t";
+         ff << A(0, 1) << "\t";
+         ff << A(0, 2) << "\t";
+         ff << A(0, 3) << "\t";
+         ff << "\n";
+	}
+}
+
+		 cout <<"%--------SIMULACION TERMINADA-----------%"<< endl;
+
