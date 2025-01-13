@@ -1,0 +1,129 @@
+
+real T = 0.15; // Espesor
+real M = 0.02; // Curvatura
+real P = 0.3;  // Posición de la curvatura
+real k = 2*M/(1-P); // Parámetro para asegurar teorema de Kutta
+real betavalue, delta, denominador, longitud, h;
+real Fy, Fx, Gamma, CL, alpha0, Fl0=1, cont=0, CL2;
+func r = sqrt(x^2 + y^2);
+real alpha = pi / 180 * 20;
+
+
+	func real yt(real t,real T) {
+		
+		return T/0.2*(0.2969*sqrt(t)-0.126*t-0.3516*(t^2)+0.2843*(t^3)-0.1036*(t^4));
+	}
+	 
+	func real yc(real t,real M,real P) {
+		
+		if(t >= 0 && t < P) {
+			return M/(P^2) * (2*P*t-(t^2));
+			
+		} else {
+			return M/((1-P)^2)*(1-2*P+2*P*t-(t^2));
+		}
+	}
+
+	func real yteta(real t,real M,real P) {
+		
+		if(t >= 0 && t < P) {
+			return atan(2*M/(P^2)*(P-t));
+			
+		} else {
+			return atan(2*M/((1-P)^2)*(P-t));
+		}
+	}
+	/*
+	func real ytprima(real t, real T) {
+		return T / 0.2 * (0.2969 / (2 * sqrt(t)) - 0.126 - 2 * 0.3516 * t + 3 * 0.2843 * (t^2) - 4 * 0.1036 * (t^3));
+	}
+
+	func real ycprima(real t, real M, real P) {
+		if (t >= 0 && t < P) {
+			return M / (P^2) * (2 * P - 2 * t);
+		} else {
+			return M / ((1 - P)^2) * (2 * P - 2 * t);
+		}
+	}
+
+	func real ytetaprima(real t, real M, real P) {
+		if (t >= 0 && t < P) {
+			return - (2 * M / (P^2)) / (1 + (2 * M / (P^2) * (P - t))^2);
+		} else {
+			return - (2 * M / ((1 - P)^2)) / (1 + (2 * M / ((1 - P)^2) * (P - t))^2);
+		}
+	}
+	//Calculo longitud de perfil
+	int N = 1000;
+	real longSplus = 0.0;
+	real longSminus = 0.0;
+	real dt = 1.0 / N;
+
+	for (int i = 1; i < N; i++) {
+		real t = i * dt;
+		real dxdt = 1 - ytprima(t, T) * sin(yteta(t, M, P)) - yt(t, T) * cos(yteta(t, M, P)) * ytetaprima(t, M, P);
+		real dydt = ycprima(t, M, P) + ytprima(t, T) * cos(yteta(t, M, P)) - yt(t, T) * sin(yteta(t, M, P)) * ytetaprima(t, M, P);
+		longSplus += sqrt(dxdt^2 + dydt^2) * dt;
+	}
+
+	for (int i = 1; i < N; i++) {
+		real t = i * dt;
+		real dxdt = 1 - ytprima(t, T) * sin(yteta(t, M, P)) + yt(t, T) * cos(yteta(t, M, P)) * ytetaprima(t, M, P);
+		real dydt = ycprima(t, M, P) - ytprima(t, T) * cos(yteta(t, M, P)) - yt(t, T) * sin(yteta(t, M, P)) * ytetaprima(t, M, P);
+		longSminus += sqrt(dxdt^2 + dydt^2) * dt;
+	}
+	cout << "La longitud de la frontera Splus es: " << longSplus << endl;
+	cout << "La longitud de la frontera Sminus es: " << longSminus << endl;*/
+
+	// Definir las fronteras
+	border Sext(t = 0, 2 * pi) { x = 10 * cos(t); y = 10 * sin(t); label = 1; };
+	border Splus(t = 0, 1) { x = t - yt(t,T)*sin(yteta(t,M,P)); y = yc(t,M,P) + yt(t,T)*cos(yteta(t,M,P)); label = 2;};
+	border Sminus(t = 1, 0) { x = t + yt(t,T)*sin(yteta(t,M,P)); y = yc(t,M,P) - yt(t,T)*cos(yteta(t,M,P)); label = 2;};
+				   
+	mesh Th = buildmesh(Sext(2*pi*10/0.5)+ Splus(1.03456/0.01) + Sminus(0.996111/0.01));
+//plot(Th, wait=1);
+
+
+fespace Vh(Th, P2); 
+Vh psi1, psi0, w, psi, a;
+fespace Vh1(Th, P1);
+Vh1 vx, vy, p, beta;
+
+
+solve streamline1(psi1, w) = int2d(Th)(dx(psi1) * dx(w) + dy(psi1) * dy(w)) 
+                           + on(1, psi1 = y * cos(alpha) - x * sin(alpha)) 
+                           + on(2, psi1 = 0);
+						   
+solve streamline0(psi0, w) = int2d(Th)(dx(psi0) * dx(w) + dy(psi0) * dy(w)) 
+                           + on(1, psi0 = 0)
+                           + on(2, psi0 = 1);
+						   
+beta = (k * dy(psi1)(1,0) - dx(psi1)(1,0)) / (dx(psi0)(1,0) - k * dy(psi0)(1,0));
+betavalue = beta(1,0);
+
+cout << "Beta: " << betavalue << endl;
+
+psi = psi1 + beta * psi0;
+plot(psi, ColorScheme=1, nbiso=900, wait=1, bb=[[-0.15, -0.25], [1.55, 0.25]]);
+
+vx = dy(psi);
+vy = -dx(psi);
+
+
+plot([vx, vy], psi, ColorScheme=1, nbiso=900, wait=1, bb=[[-0.15, -0.25], [1.55, 0.25]]);
+
+
+Gamma = int1d(Th, 2)(vx * N.y - vy * N.x); 
+cout << "Parametro Gamma de psi = " << Gamma << "\t" << endl;
+
+// Calcular las fuerzas en la dirección x e y
+p = 0.5 * (1 - vx^2 - vy^2);
+Fx = int1d(Th, 2)(p * N.x);
+Fy = int1d(Th, 2)(p * N.y);
+
+plot(p);
+
+cout << "Fuerza x: " << Fx << "\t" << "Fuerza y: " << Fy << endl;
+
+cout << "Fuerza arrastre: " << Fx * cos(alpha) + Fy * sin(alpha) << "\t" 
+     << "Fuerza Sustentacion: " << -Fx * sin(alpha) + Fy * cos(alpha) << endl;
