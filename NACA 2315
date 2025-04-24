@@ -175,8 +175,8 @@ func Ycaract2=y-Dt*(uy+uyold2(x-2.0*Dt*ux,y-2.0*Dt*uy));
 						Th = adaptmesh(Th, ux, uy, p, hmin=0.005, hmax=2.5, nbvx=7500, err=1e-2);
 					}
 				}
-				Fx = int1d(Th,5)((-p + 2*dx(ux)) * (-N.x) + (dy(ux) + dx(uy)) * (-N.y));
-				Fy = int1d(Th,5)((dy(ux) + dx(uy)) * (-N.x) + (-p + 2*dy(uy)) * (-N.y));
+				Fx = int1d(Th,5)((-p + 2/Re*dx(ux)) * (-N.x) + (dy(ux) + dx(uy)) * (-N.y)/Re);
+				Fy = int1d(Th,5)((dy(ux) + dx(uy)) * (-N.x)/Re + (-p + 2/Re*dy(uy)) * (-N.y));
 
 				CL = 2*(-Fx * sin(alpha) + Fy * cos(alpha));
 				cout << "Coeficiente de sustentacion = " << CL << "\t" << endl;
